@@ -27,20 +27,21 @@ public class ListaTarefas {
     // =====================================================
     //  LISTAR
     // =====================================================
-    public void listar() {
+    public String listar() {
         if (head == null) {
-            System.out.println("Lista vazia!");
-            return;
+            return "Lista vazia!";
         }
 
+        StringBuilder sb = new StringBuilder();
         Tarefa atual = head;
         int i = 0;
 
         while (atual != null) {
-            System.out.println(i + " -> " + atual);
+            sb.append(i).append(" -> ").append(atual).append("\n");
             atual = atual.getProximo();
             i++;
         }
+        return sb.toString();
     }
 
     // =====================================================
