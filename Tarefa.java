@@ -26,7 +26,7 @@ public class Tarefa {
     }
 
     public int getValorPrioridade() {
-        if (prioridade.equals("URGENTE")) return 2;
+        if (prioridade.equals("Urgente")) return 2;
         return 1;
     }
 

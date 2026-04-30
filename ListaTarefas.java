@@ -44,6 +44,20 @@ public class ListaTarefas {
         return sb.toString();
     }
 
+    public Tarefa getTarefa(int index) {
+      Tarefa atual = this.head;
+
+      // Caminha pela lista até chegar no índice desejado
+      for (int i = 0; i < index; i++) {
+         if (atual == null) {
+            return null; // Retorna nulo se o índice não existir
+         }
+         atual = atual.getProximo();
+      }
+
+      return atual; // Retorna a tarefa encontrada
+   }
+
     // =====================================================
     //  REMOVER
     // =====================================================
