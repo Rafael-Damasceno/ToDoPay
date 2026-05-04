@@ -1,4 +1,5 @@
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class Tarefa {
 
@@ -39,8 +40,12 @@ public class Tarefa {
     }
 
     public String toString() {
-        return "[" + prioridade + "] " + titulo +
-               " | Prazo: " + dataPrazo +
+        // Formatador para a data de saída
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String dataFormatada = dataPrazo.format(formatador);
+
+        return  titulo + " | Prazo: " + dataFormatada +
+               " | Prioridade: " + prioridade +
                " | Status: " + (concluida ? "Concluída" : "Pendente");
     }
 

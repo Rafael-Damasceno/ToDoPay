@@ -1,4 +1,5 @@
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class ListaTarefas {
 
@@ -34,12 +35,10 @@ public class ListaTarefas {
 
         StringBuilder sb = new StringBuilder();
         Tarefa atual = head;
-        int i = 0;
 
         while (atual != null) {
-            sb.append(i).append(" -> ").append(atual).append("\n");
+            sb.append(" ➤ ").append(atual).append("\n");
             atual = atual.getProximo();
-            i++;
         }
         return sb.toString();
     }
