@@ -49,6 +49,11 @@ public class Tarefa {
                " | Status: " + (concluida ? "Concluída" : "Pendente");
     }
 
+    public void setTitulo(String titulo) { this.titulo = titulo; }
+    public void setDescricao(String descricao) { this.descricao = descricao; }
+    public void setPrioridade(String prioridade) { this.prioridade = prioridade; }
+    public void setDataPrazo(LocalDate dataPrazo) { this.dataPrazo = dataPrazo; }
+
     // getters
     public Tarefa getProximo() { return proximo; }
     public void setProximo(Tarefa proximo) { this.proximo = proximo; }

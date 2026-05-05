@@ -203,59 +203,130 @@ public class Tela extends JFrame {
     }
 
     // =========================================================
-    // MODAL EXCLUIR / DETALHES
+    // MODAL DETALHES / EDITAR
     // =========================================================
     private void abrirModalEditar(int index) {
         // Recupera a tarefa real para mostrar as informações
         Tarefa tarefa = lista.getTarefa(index);
 
-        JDialog dialog = new JDialog(this, "Modal editar", true);
-        dialog.setSize(450, 300);
+        JDialog dialog = new JDialog(this, "Informações da Tarefa", true);
+        dialog.setSize(550, 400);
         dialog.setLocationRelativeTo(this);
 
+        // Inicia exibindo apenas as informações (Modo Visualização)
+        exibirModoVisualizacao(dialog, tarefa, index);
+        dialog.setVisible(true);
+    }
+
+    private void exibirModoVisualizacao(JDialog dialog, Tarefa tarefa, int index) {
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         JPanel painelDialog = new JPanel(new BorderLayout(10, 20));
         painelDialog.setBackground(CINZA_CLARO);
         painelDialog.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Informações da Tarefa
-        JPanel painelInfo = new JPanel(new GridLayout(4, 1, 0, 10));
+        // Exibição dos dados atuais como Labels
+        JPanel painelInfo = new JPanel(new GridLayout(4, 1, 0, 15));
         painelInfo.setBackground(CINZA_CLARO);
         
         painelInfo.add(criarLabelEscura("Título: " + tarefa.getTitulo()));
         painelInfo.add(criarLabelEscura("Descrição: " + tarefa.getDescricao()));
-        painelInfo.add(criarLabelEscura("Prazo: " + tarefa.getDataPrazo()));
+        painelInfo.add(criarLabelEscura("Prazo: " + tarefa.getDataPrazo().format(formatador)));
         painelInfo.add(criarLabelEscura("Prioridade: " + tarefa.getPrioridade()));
 
         painelDialog.add(painelInfo, BorderLayout.CENTER);
 
-        JPanel painelBotoes = new JPanel(new BorderLayout());
+        // Botões de ação
+        JPanel painelBotoes = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         painelBotoes.setBackground(CINZA_CLARO);
 
-        // Removendo a tarefa
-        JButton btnRemover = new JButton("Remover");
-        btnRemover.setBackground(SEGUNDO_BOTAO);
-        btnRemover.setForeground(Color.BLACK);
-        btnRemover.setFocusPainted(false);
-        btnRemover.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+        JButton btnRemover = criarBotaoSecundario("Remover");
         btnRemover.addActionListener(e -> {
             lista.remover(index);
             atualizarTela();
             dialog.dispose();
         });
 
-        JButton btnConcluir = criarBotaoPrincipal("Concluir");
+        JButton btnConcluir = criarBotaoSecundario("Concluir");
         btnConcluir.addActionListener(e -> {
             lista.concluir(index);
             atualizarTela();
             dialog.dispose();
         });
 
-        painelBotoes.add(btnRemover, BorderLayout.WEST);
-        painelBotoes.add(btnConcluir, BorderLayout.EAST);
+        JButton btnEditar = criarBotaoPrincipal("Editar");
+        btnEditar.addActionListener(e -> exibirModoEdicao(dialog, tarefa, index));
+
+        painelBotoes.add(btnRemover);
+        painelBotoes.add(btnConcluir);
+        painelBotoes.add(btnEditar);
         painelDialog.add(painelBotoes, BorderLayout.SOUTH);
 
         dialog.setContentPane(painelDialog);
-        dialog.setVisible(true);
+        dialog.revalidate();
+    }
+
+    private void exibirModoEdicao(JDialog dialog, Tarefa tarefa, int index) {
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        JPanel painelDialog = new JPanel(new BorderLayout(10, 20));
+        painelDialog.setBackground(CINZA_CLARO);
+        painelDialog.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JTextField campoTitulo = new JTextField(tarefa.getTitulo());
+        JTextField campoDescricao = new JTextField(tarefa.getDescricao());
+        JTextField campoData = new JTextField(tarefa.getDataPrazo().format(formatador));
+        JComboBox<String> comboPrioridade = new JComboBox<>(new String[]{"Tranquilo", "Urgente"});
+        comboPrioridade.setSelectedItem(tarefa.getPrioridade());
+
+        JPanel painelLabels = new JPanel(new GridLayout(4, 1, 0, 15));
+        painelLabels.setBackground(CINZA_CLARO);
+        painelLabels.add(criarLabelEscura("Novo Título:"));
+        painelLabels.add(criarLabelEscura("Nova Descrição:"));
+        painelLabels.add(criarLabelEscura("Novo Prazo:"));
+        painelLabels.add(criarLabelEscura("Nova Prioridade:"));
+
+        JPanel painelCampos = new JPanel(new GridLayout(4, 1, 0, 15));
+        painelCampos.setBackground(CINZA_CLARO);
+        painelCampos.add(campoTitulo);
+        painelCampos.add(campoDescricao);
+        painelCampos.add(campoData);
+        painelCampos.add(comboPrioridade);
+
+        painelDialog.add(painelLabels, BorderLayout.WEST);
+        painelDialog.add(painelCampos, BorderLayout.CENTER);
+
+        JPanel painelBotoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        painelBotoes.setBackground(CINZA_CLARO);
+
+        JButton btnCancelar = criarBotaoSecundario("Cancelar");
+        btnCancelar.addActionListener(e -> exibirModoVisualizacao(dialog, tarefa, index));
+
+        JButton btnSalvar = criarBotaoPrincipal("Salvar");
+        btnSalvar.addActionListener(e -> {
+            if (campoTitulo.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "O título da tarefa é obrigatório!");
+                return;
+            }
+
+            try {
+                LocalDate dataPrazo = LocalDate.parse(campoData.getText(), formatador);
+                tarefa.setTitulo(campoTitulo.getText());
+                tarefa.setDescricao(campoDescricao.getText()); 
+                tarefa.setPrioridade((String) comboPrioridade.getSelectedItem());
+                tarefa.setDataPrazo(dataPrazo);
+
+                atualizarTela();
+                dialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Formato de data inválido!");
+            }
+        });
+
+        painelBotoes.add(btnCancelar);
+        painelBotoes.add(btnSalvar);
+        painelDialog.add(painelBotoes, BorderLayout.SOUTH);
+
+        dialog.setContentPane(painelDialog);
+        dialog.revalidate();
     }
 
     // =========================================================
@@ -279,6 +350,15 @@ public class Tela extends JFrame {
         label.setFont(new Font("SansSerif", Font.BOLD, 16));
         label.setForeground(TEXTO_ESCURO);
         return label;
+    }
+
+    private JButton criarBotaoSecundario(String texto) {
+        JButton btn = new JButton(texto);
+        btn.setBackground(SEGUNDO_BOTAO);
+        btn.setForeground(Color.BLACK);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+        return btn;
     }
 
     // Método para criar botões com estilo definido
