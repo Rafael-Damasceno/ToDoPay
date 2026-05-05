@@ -7,9 +7,11 @@ import javax.swing.border.EmptyBorder;
 
 public class Tela extends JFrame {
 
-    private ListaTarefas lista = new ListaTarefas();
+    private ListaTarefas listaAtivas = new ListaTarefas();
+    private ListaTarefas listaConcluidas = new ListaTarefas();
     private DefaultListModel<String> modeloLista;
     private JList<String> listaTarefasUI;
+    private JComboBox<String> comboFiltro;
 
     // Paleta de Cores
     private final Color COR_FUNDO = new Color(43, 3, 59);
@@ -57,6 +59,18 @@ public class Tela extends JFrame {
         lblMinhasTarefas.setForeground(Color.WHITE);
         painelSubTopo.add(lblMinhasTarefas, BorderLayout.WEST);
 
+        JPanel painelControles = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        painelControles.setBackground(COR_FUNDO);
+
+        // ComboBox para filtrar entre Pendentes e Concluídas
+        String[] opcoesFiltro = {"Tarefas Pendentes", "Tarefas Concluídas"};
+        comboFiltro = new JComboBox<>(opcoesFiltro);
+        comboFiltro.setBackground(COR_COMBO);
+        comboFiltro.setForeground(Color.WHITE);
+        comboFiltro.setFocusable(false);
+        comboFiltro.addActionListener(e -> atualizarTela());
+        painelControles.add(comboFiltro);
+
         // ComboBox de Ordenação
         String[] opcoesOrdem = {"Ordenar tarefas", "Por Prioridade", "Por Data"};
         JComboBox<String> comboOrdenar = new JComboBox<>(opcoesOrdem);
@@ -64,12 +78,15 @@ public class Tela extends JFrame {
         comboOrdenar.setForeground(Color.WHITE);
         comboOrdenar.setFocusable(false);
         comboOrdenar.addActionListener(e -> {
+            ListaTarefas listaAtual = getListaAtual();
             int index = comboOrdenar.getSelectedIndex();
-            if (index == 1) lista.ordenarPorPrioridade();
-            if (index == 2) lista.ordenarPorData();
+            if (index == 1) listaAtual.ordenarPorPrioridade();
+            if (index == 2) listaAtual.ordenarPorData();
             atualizarTela();
         });
-        painelSubTopo.add(comboOrdenar, BorderLayout.EAST);
+        painelControles.add(comboOrdenar);
+
+        painelSubTopo.add(painelControles, BorderLayout.EAST);
 
         painelTopo.add(painelSubTopo, BorderLayout.SOUTH);
         painelPrincipal.add(painelTopo, BorderLayout.NORTH);
@@ -186,7 +203,8 @@ public class Tela extends JFrame {
                 (String) comboPrioridade.getSelectedItem(), 
                 dataPrazo
             );
-            lista.adicionar(t);
+            listaAtivas.adicionar(t);
+            comboFiltro.setSelectedIndex(0); // Volta para a vista de pendentes ao criar
             atualizarTela();
             dialog.dispose();
         } catch (Exception ex) {
@@ -207,18 +225,20 @@ public class Tela extends JFrame {
     // =========================================================
     private void abrirModalEditar(int index) {
         // Recupera a tarefa real para mostrar as informações
-        Tarefa tarefa = lista.getTarefa(index);
+        ListaTarefas listaAtual = getListaAtual();
+        Tarefa tarefa = listaAtual.getTarefa(index);
+        if (tarefa == null) return;
 
         JDialog dialog = new JDialog(this, "Informações da Tarefa", true);
         dialog.setSize(550, 400);
         dialog.setLocationRelativeTo(this);
 
         // Inicia exibindo apenas as informações (Modo Visualização)
-        exibirModoVisualizacao(dialog, tarefa, index);
+        exibirModoVisualizacao(dialog, tarefa, index, listaAtual);
         dialog.setVisible(true);
     }
 
-    private void exibirModoVisualizacao(JDialog dialog, Tarefa tarefa, int index) {
+    private void exibirModoVisualizacao(JDialog dialog, Tarefa tarefa, int index, ListaTarefas listaDona) {
         DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         JPanel painelDialog = new JPanel(new BorderLayout(10, 20));
         painelDialog.setBackground(CINZA_CLARO);
@@ -241,23 +261,32 @@ public class Tela extends JFrame {
 
         JButton btnRemover = criarBotaoSecundario("Remover");
         btnRemover.addActionListener(e -> {
-            lista.remover(index);
+            listaDona.remover(index);
             atualizarTela();
             dialog.dispose();
         });
 
-        JButton btnConcluir = criarBotaoSecundario("Concluir");
-        btnConcluir.addActionListener(e -> {
-            lista.concluir(index);
-            atualizarTela();
-            dialog.dispose();
-        });
+        // Só exibe o botão concluir se a tarefa estiver na lista de Ativas
+        if (listaDona == listaAtivas) {
+            JButton btnConcluir = criarBotaoSecundario("Concluir");
+            btnConcluir.addActionListener(e -> {
+                Tarefa t = listaAtivas.getTarefa(index);
+                if (t != null) {
+                    listaAtivas.remover(index);
+                    t.setProximo(null); // Limpa o ponteiro antes de mover para outra lista
+                    t.marcarComoConcluida();
+                    listaConcluidas.adicionar(t);
+                }
+                atualizarTela();
+                dialog.dispose();
+            });
+            painelBotoes.add(btnConcluir);
+        }
 
         JButton btnEditar = criarBotaoPrincipal("Editar");
-        btnEditar.addActionListener(e -> exibirModoEdicao(dialog, tarefa, index));
+        btnEditar.addActionListener(e -> exibirModoEdicao(dialog, tarefa, index, listaDona));
 
         painelBotoes.add(btnRemover);
-        painelBotoes.add(btnConcluir);
         painelBotoes.add(btnEditar);
         painelDialog.add(painelBotoes, BorderLayout.SOUTH);
 
@@ -265,7 +294,7 @@ public class Tela extends JFrame {
         dialog.revalidate();
     }
 
-    private void exibirModoEdicao(JDialog dialog, Tarefa tarefa, int index) {
+    private void exibirModoEdicao(JDialog dialog, Tarefa tarefa, int index, ListaTarefas listaDona) {
         DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         JPanel painelDialog = new JPanel(new BorderLayout(10, 20));
         painelDialog.setBackground(CINZA_CLARO);
@@ -298,7 +327,7 @@ public class Tela extends JFrame {
         painelBotoes.setBackground(CINZA_CLARO);
 
         JButton btnCancelar = criarBotaoSecundario("Cancelar");
-        btnCancelar.addActionListener(e -> exibirModoVisualizacao(dialog, tarefa, index));
+        btnCancelar.addActionListener(e -> exibirModoVisualizacao(dialog, tarefa, index, listaDona));
 
         JButton btnSalvar = criarBotaoPrincipal("Salvar");
         btnSalvar.addActionListener(e -> {
@@ -332,9 +361,14 @@ public class Tela extends JFrame {
     // =========================================================
     // MÉTODOS UTILITÁRIOS
     // =========================================================
+    private ListaTarefas getListaAtual() {
+        if (comboFiltro == null) return listaAtivas;
+        return comboFiltro.getSelectedIndex() == 0 ? listaAtivas : listaConcluidas;
+    }
+
     private void atualizarTela() {
         modeloLista.clear();
-        String textoLista = lista.listar(); 
+        String textoLista = getListaAtual().listar(); 
         if (textoLista != null && !textoLista.isEmpty()) {
             String[] linhas = textoLista.split("\n");
             for (String linha : linhas) {
