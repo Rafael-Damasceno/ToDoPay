@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class Tela extends JFrame {
-
+    // Intância de varriáveis globais
     private ListaTarefas listaAtivas = new ListaTarefas();
     private ListaTarefas listaConcluidas = new ListaTarefas();
     private DefaultListModel<String> modeloLista;
@@ -21,6 +21,7 @@ public class Tela extends JFrame {
     private final Color CINZA_CLARO = new Color(217, 217, 217);
     private final Color TEXTO_ESCURO = new Color(30, 20, 60);
 
+    // Construtor da Tela
     public Tela() {
         setTitle("To-Do List");
         setSize(800, 600);
@@ -43,13 +44,14 @@ public class Tela extends JFrame {
         tituloApp.setForeground(Color.WHITE);
         painelTopo.add(tituloApp, BorderLayout.NORTH);
         // Linha decorativa abaixo do título
-        tituloApp.setBorder(new EmptyBorder(0, 0, 5, 0)); 
+        tituloApp.setBorder(new EmptyBorder(0, 0, 5, 0));
+
         JPanel linhaDecorativa = new JPanel();
         linhaDecorativa.setBackground(COR_COMBO);
         linhaDecorativa.setPreferredSize(new Dimension(0, 5)); 
         painelTopo.add(linhaDecorativa, BorderLayout.CENTER);
 
-        // Sub-cabeçalho (Minhas Tarefas + Ordenar)
+        // Sub-cabeçalho (Minhas Tarefas e Controles)
         JPanel painelSubTopo = new JPanel(new BorderLayout());
         painelSubTopo.setBackground(COR_FUNDO);
         painelSubTopo.setBorder(new EmptyBorder(20, 0, 0, 0));
@@ -59,6 +61,7 @@ public class Tela extends JFrame {
         lblMinhasTarefas.setForeground(Color.WHITE);
         painelSubTopo.add(lblMinhasTarefas, BorderLayout.WEST);
 
+        // Painel de controles (ComboBoxes)
         JPanel painelControles = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         painelControles.setBackground(COR_FUNDO);
 
@@ -77,6 +80,7 @@ public class Tela extends JFrame {
         comboOrdenar.setBackground(COR_COMBO);
         comboOrdenar.setForeground(Color.WHITE);
         comboOrdenar.setFocusable(false);
+        // Evento: Descobre qual lista está ativa, roda o algoritmo de ordenação nela e redesenha a tela
         comboOrdenar.addActionListener(e -> {
             ListaTarefas listaAtual = getListaAtual();
             int index = comboOrdenar.getSelectedIndex();
@@ -92,28 +96,27 @@ public class Tela extends JFrame {
         painelPrincipal.add(painelTopo, BorderLayout.NORTH);
 
         // Quadro principal de listagem de tarefas
-        modeloLista = new DefaultListModel<>();
+        modeloLista = new DefaultListModel<>(); // Cria o gerenciador de dados da lista
         listaTarefasUI = new JList<>(modeloLista);
         listaTarefasUI.setBackground(CINZA_CLARO);
         listaTarefasUI.setFont(new Font("SansSerif", Font.BOLD, 16));
         listaTarefasUI.setForeground(Color.BLACK);
-        
-        // Espaçamento interno dos itens da lista
         listaTarefasUI.setFixedCellHeight(35); 
         
-        // Detecção de clique na lista para abrir o Modal de Edição
+        // Detecção de clique simples na lista para abrir o Modal de Edição
         listaTarefasUI.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent evt) {
                 if (evt.getClickCount() == 1) {
                     int index = listaTarefasUI.locationToIndex(evt.getPoint());
                     if (index >= 0) {
                         abrirModalEditar(index);
-                        listaTarefasUI.clearSelection(); // Tira a marcação azul de seleção
+                        listaTarefasUI.clearSelection();
                     }
                 }
             }
         });
 
+        // O JScrollPane permite que a lista tenha barra de rolagem se houver muitas tarefas
         JScrollPane scroll = new JScrollPane(listaTarefasUI);
         scroll.setBorder(BorderFactory.createEmptyBorder()); // Remove a borda padrão
         painelPrincipal.add(scroll, BorderLayout.CENTER);
@@ -128,12 +131,11 @@ public class Tela extends JFrame {
 
         painelPrincipal.add(painelBottom, BorderLayout.SOUTH);
         
+        // Leitura de dados iniciais
         atualizarTela();
     }
 
-    // =========================================================
     // MODAL ADICIONAR
-    // =========================================================
     private void abrirModalAdicionar() {
         JDialog dialog = new JDialog(this, "Modal adicionar", true);
         dialog.setSize(500, 350);
@@ -143,16 +145,18 @@ public class Tela extends JFrame {
         painelDialog.setBackground(CINZA_CLARO);
         painelDialog.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Campos
+        // Campos de texto
         JTextField campoTitulo = new JTextField();
         JTextField campoDescricao = new JTextField();
         JTextField campoData = new JTextField();
+        
         // Data formatada e previamente preenchida com a data atual
         DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         campoData.setText(LocalDate.now().format(formatador));
 
         JComboBox<String> comboPrioridade = new JComboBox<>(new String[]{"Tranquilo", "Urgente"});
 
+        // Coluna da esquerda com os labels
         JPanel painelLabels = new JPanel(new GridLayout(4, 1, 0, 15));
         painelLabels.setBackground(CINZA_CLARO);
         painelLabels.add(criarLabelEscura("Título:"));
@@ -160,6 +164,7 @@ public class Tela extends JFrame {
         painelLabels.add(criarLabelEscura("Prazo:"));
         painelLabels.add(criarLabelEscura("Prioridade:"));
 
+        // Coluna da direita com os campos de entrada
         JPanel painelCampos = new JPanel(new GridLayout(4, 1, 0, 15));
         painelCampos.setBackground(CINZA_CLARO);
         painelCampos.add(campoTitulo);
@@ -197,6 +202,7 @@ public class Tela extends JFrame {
             DateTimeFormatter formatador2 = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             LocalDate dataPrazo = LocalDate.parse(campoData.getText(), formatador2);
             
+            // Constrói o objeto Tarefa com os dados validados
             Tarefa t = new Tarefa(
                 campoTitulo.getText(), 
                 campoDescricao.getText(), 
@@ -217,14 +223,12 @@ public class Tela extends JFrame {
         painelDialog.add(painelBotoes, BorderLayout.SOUTH);
 
         dialog.setContentPane(painelDialog);
-        dialog.setVisible(true);
+        dialog.setVisible(true); // Exibe o modal na tela e só sai com algum dos botões
     }
 
-    // =========================================================
     // MODAL DETALHES / EDITAR
-    // =========================================================
     private void abrirModalEditar(int index) {
-        // Recupera a tarefa real para mostrar as informações
+        // Recupera a tarefa real de acordo com o index para mostrar as informações
         ListaTarefas listaAtual = getListaAtual();
         Tarefa tarefa = listaAtual.getTarefa(index);
         if (tarefa == null) return;
@@ -247,12 +251,10 @@ public class Tela extends JFrame {
         // Exibição dos dados atuais como Labels
         JPanel painelInfo = new JPanel(new GridLayout(4, 1, 0, 15));
         painelInfo.setBackground(CINZA_CLARO);
-        
         painelInfo.add(criarLabelEscura("Título: " + tarefa.getTitulo()));
         painelInfo.add(criarLabelEscura("Descrição: " + tarefa.getDescricao()));
         painelInfo.add(criarLabelEscura("Prazo: " + tarefa.getDataPrazo().format(formatador)));
         painelInfo.add(criarLabelEscura("Prioridade: " + tarefa.getPrioridade()));
-
         painelDialog.add(painelInfo, BorderLayout.CENTER);
 
         // Botões de ação
@@ -266,7 +268,7 @@ public class Tela extends JFrame {
             dialog.dispose();
         });
 
-        // Só exibe o botão concluir se a tarefa estiver na lista de Ativas
+        // Só exibe os botões concluir e editar se a tarefa estiver na lista de Ativas
         if (listaDona == listaAtivas) {
             JButton btnConcluir = criarBotaoSecundario("Concluir");
             btnConcluir.addActionListener(e -> {
@@ -281,25 +283,28 @@ public class Tela extends JFrame {
                 dialog.dispose();
             });
             painelBotoes.add(btnConcluir);
+
+            JButton btnEditar = criarBotaoPrincipal("Editar");
+            // Se clicar em Editar reaproveita a mesma janela (dialog), mas substitui os painéis internos
+            btnEditar.addActionListener(e -> exibirModoEdicao(dialog, tarefa, index, listaDona));
+            painelBotoes.add(btnEditar);
         }
 
-        JButton btnEditar = criarBotaoPrincipal("Editar");
-        btnEditar.addActionListener(e -> exibirModoEdicao(dialog, tarefa, index, listaDona));
-
         painelBotoes.add(btnRemover);
-        painelBotoes.add(btnEditar);
         painelDialog.add(painelBotoes, BorderLayout.SOUTH);
 
         dialog.setContentPane(painelDialog);
         dialog.revalidate();
     }
 
+    // MODO EDIÇÃO
     private void exibirModoEdicao(JDialog dialog, Tarefa tarefa, int index, ListaTarefas listaDona) {
         DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         JPanel painelDialog = new JPanel(new BorderLayout(10, 20));
         painelDialog.setBackground(CINZA_CLARO);
         painelDialog.setBorder(new EmptyBorder(20, 20, 20, 20));
 
+        // Os JTextFields já nascem com o texto atual da tarefa dentro deles
         JTextField campoTitulo = new JTextField(tarefa.getTitulo());
         JTextField campoDescricao = new JTextField(tarefa.getDescricao());
         JTextField campoData = new JTextField(tarefa.getDataPrazo().format(formatador));
@@ -327,6 +332,7 @@ public class Tela extends JFrame {
         painelBotoes.setBackground(CINZA_CLARO);
 
         JButton btnCancelar = criarBotaoSecundario("Cancelar");
+        // O cancelar da Edição não fecha a tela, ele apenas volta o modal para o estado de Visualização
         btnCancelar.addActionListener(e -> exibirModoVisualizacao(dialog, tarefa, index, listaDona));
 
         JButton btnSalvar = criarBotaoPrincipal("Salvar");
@@ -338,6 +344,7 @@ public class Tela extends JFrame {
 
             try {
                 LocalDate dataPrazo = LocalDate.parse(campoData.getText(), formatador);
+                // Usando a referência da tarefa original, os dados são atualizados diretamente nela
                 tarefa.setTitulo(campoTitulo.getText());
                 tarefa.setDescricao(campoDescricao.getText()); 
                 tarefa.setPrioridade((String) comboPrioridade.getSelectedItem());
@@ -358,14 +365,14 @@ public class Tela extends JFrame {
         dialog.revalidate();
     }
 
-    // =========================================================
     // MÉTODOS UTILITÁRIOS
-    // =========================================================
+    // Retorna a lista que deve ser exibida de acordo com o filtro selecionado no comboBox
     private ListaTarefas getListaAtual() {
         if (comboFiltro == null) return listaAtivas;
         return comboFiltro.getSelectedIndex() == 0 ? listaAtivas : listaConcluidas;
     }
 
+    // Responsável por traduzir o backend para a interface gráfica
     private void atualizarTela() {
         modeloLista.clear();
         String textoLista = getListaAtual().listar(); 
@@ -379,6 +386,7 @@ public class Tela extends JFrame {
         }
     }
 
+    // Métodos para criar componentes estilizados de forma padronizada
     private JLabel criarLabelEscura(String texto) {
         JLabel label = new JLabel(texto);
         label.setFont(new Font("SansSerif", Font.BOLD, 16));
@@ -395,7 +403,6 @@ public class Tela extends JFrame {
         return btn;
     }
 
-    // Método para criar botões com estilo definido
     private JButton criarBotaoPrincipal(String texto) {
         JButton btn = new JButton(texto);
         btn.setBackground(PRINCIPAL_BOTAO);
